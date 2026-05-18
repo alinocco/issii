@@ -1,0 +1,20 @@
+version: "3.9"
+
+services:
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.19.0
+    container_name: mlflow-server
+    ports:
+      - "5001:5000"
+    volumes:
+      - ./mlruns:/mlflow/mlruns
+    command: >
+      mlflow server
+      --host 0.0.0.0
+      --port 5000
+      --backend-store-uri sqlite:///mlflow/mlruns/mlruns.db
+      --serve-artifacts
+      --artifacts-destination /mlflow/mlruns
+    environment:
+      MLFLOW_TRACKING_URI: http://localhost:5000
+    restart: unless-stopped

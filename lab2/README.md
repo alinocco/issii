@@ -37,18 +37,18 @@ poetry install
 
 В `src/config.py` по умолчанию:
 
-- `MLFLOW_TRACKING_URI = "http://localhost:5000"`
+- `MLFLOW_TRACKING_URI = "http://localhost:5001"`
 - `MLFLOW_EXPERIMENT_NAME = "anxiety_classification"`
 
 Можно переопределить их через переменные окружения:
 
 ```bash
-export MLFLOW_TRACKING_URI="http://localhost:5000"
+export MLFLOW_TRACKING_URI="http://localhost:5001"
 export MLFLOW_EXPERIMENT_NAME="anxiety_lab2"
 ```
 
 После запуска трекинг-сервера MLflow UI будет доступен по адресу
-`http://localhost:5000` (если используется стандартный сервер).
+`http://localhost:5001` (если используется стандартный сервер).
 
 ## Запуск одного эксперимента
 
