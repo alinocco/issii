@@ -1,0 +1,15 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+ENV LOCAL_DATA_PATH=/app/data/sample_anxiety.parquet
+RUN python scripts/generate_sample_data.py && python -m src.export_model --model logistic
+
+EXPOSE 9092
+
+CMD ["python", "-m", "src.kafka_consumer"]

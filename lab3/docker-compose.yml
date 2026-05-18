@@ -1,0 +1,100 @@
+services:
+  kafka:
+    image: dhi.io/kafka:4.2-native
+    pull_policy: if_not_present
+    hostname: kafka
+    ports:
+      - "127.0.0.1:9092:9092"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+    volumes:
+      - kafka-data:/opt/kafka/logs
+    # native-образ без shell/CLI; готовность проверяют consumer/producer (wait_for_kafka)
+    networks:
+      - lab3-net
+
+  bentoml-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "127.0.0.1:3000:3000"
+      - "127.0.0.1:9091:9091"
+    environment:
+      ARTIFACT_PATH: /app/artifacts/logistic
+      PROMETHEUS_METRICS_PORT: "9091"
+      BENTOML_HOME: /app/.bentoml
+    networks:
+      - lab3-net
+
+  kafka-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    depends_on:
+      kafka:
+        condition: service_started
+    restart: unless-stopped
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      PROMETHEUS_METRICS_PORT: "9092"
+    ports:
+      - "127.0.0.1:9102:9092"
+    networks:
+      - lab3-net
+
+  kafka-init:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      kafka:
+        condition: service_started
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      LOCAL_DATA_PATH: /app/data/sample_anxiety.parquet
+    entrypoint: ["python", "-m", "src.kafka_producer", "--limit", "2000"]
+    networks:
+      - lab3-net
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    pull_policy: if_not_present
+    ports:
+      - "127.0.0.1:9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    depends_on:
+      - bentoml-api
+      - kafka-worker
+    networks:
+      - lab3-net
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    pull_policy: if_not_present
+    ports:
+      - "127.0.0.1:3001:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+    networks:
+      - lab3-net
+
+networks:
+  lab3-net:
+    driver: bridge
+
+volumes:
+  kafka-data:

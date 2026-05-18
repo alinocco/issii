@@ -1,0 +1,58 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "id": 1,
+      "title": "Predictions rate (REST + Kafka)",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum(rate(anxiety_predictions_total[1m])) by (source, status)",
+          "legendFormat": "{{source}} {{status}}"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "id": 2,
+      "title": "Latency p95",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(anxiety_prediction_latency_seconds_bucket[1m])) by (le, source))",
+          "legendFormat": "{{source}} p95"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 8 },
+      "id": 3,
+      "title": "Total predictions",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "sum(anxiety_predictions_total)",
+          "legendFormat": "total"
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["lab3", "anxiety"],
+  "templating": { "list": [] },
+  "time": { "from": "now-15m", "to": "now" },
+  "title": "Anxiety Model Serving",
+  "uid": "anxiety-serving",
+  "version": 1
+}
